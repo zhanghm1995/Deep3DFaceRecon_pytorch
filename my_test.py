@@ -42,12 +42,12 @@ def read_data(im_path, lm_path, lm3d_std, to_tensor=True):
     lm = lm.reshape([-1, 2])
     lm[:, -1] = H - 1 - lm[:, -1]
     
-    transform_params, im, lm, _, scale_params = align_img(im, lm, lm3d_std)
+    transform_params, im, lm, _ = align_img(im, lm, lm3d_std)
     if to_tensor:
         im = torch.tensor(np.array(im)/255., dtype=torch.float32).permute(2, 0, 1).unsqueeze(0)
         lm = torch.tensor(lm).unsqueeze(0)
     
-    return im, lm, scale_params
+    return im, lm, transform_params
 
 def main(rank, opt, name='examples'):
     device = torch.device(rank)
@@ -70,11 +70,11 @@ def main(rank, opt, name='examples'):
         img_name = im_path[i].split(os.path.sep)[-1].replace('.png','').replace('.jpg','')
         if not os.path.isfile(lm_path[i]):
             continue
-        im_tensor, lm_tensor, scale_params = read_data(im_path[i], lm_path[i], lm3d_std)
+        im_tensor, lm_tensor, transform_params = read_data(im_path[i], lm_path[i], lm3d_std)
         data = {
             'imgs': im_tensor,
             'lms': lm_tensor,
-            'scale_params': scale_params
+            'transform_params': transform_params
         }
         model.set_input(data)  # unpack data from data loader
         model.test()           # run inference

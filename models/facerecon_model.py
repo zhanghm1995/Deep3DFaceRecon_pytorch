@@ -129,6 +129,7 @@ class FaceReconModel(BaseModel):
         self.gt_lm = input['lms'].to(self.device)  if 'lms' in input else None
         self.trans_m = input['M'].to(self.device) if 'M' in input else None
         self.image_paths = input['im_paths'] if 'im_paths' in input else None
+        self.transform_params = input['transform_params'] if 'transform_params' in input else None
 
     def forward(self):
         output_coeff = self.net_recon(self.input_img)
@@ -221,6 +222,7 @@ class FaceReconModel(BaseModel):
         pred_lm = self.pred_lm.cpu().numpy()
         pred_lm = np.stack([pred_lm[:,:,0],self.input_img.shape[2]-1-pred_lm[:,:,1]],axis=2) # transfer to image coordinate
         pred_coeffs['lm68'] = pred_lm
+        pred_coeffs['transform_params'] = self.transform_params
         savemat(name,pred_coeffs)
 
 

@@ -40,6 +40,42 @@ def data_prepare(folder_list,mode):
     lms_list_final, imgs_list_final, msks_list_final = check_list(lms_list, imgs_list, msks_list) # check if the path is valid
     write_list(lms_list_final, imgs_list_final, msks_list_final, mode=mode) # save files
 
+
+def extract_5p(lm):
+    lm_idx = np.array([31, 37, 40, 43, 46, 49, 55]) - 1
+    lm5p = np.stack([lm[lm_idx[0], :], np.mean(lm[lm_idx[[1, 2]], :], 0), np.mean(
+        lm[lm_idx[[3, 4]], :], 0), lm[lm_idx[5], :], lm[lm_idx[6], :]], axis=0)
+    lm5p = lm5p[[1, 2, 0, 3, 4], :]
+    return lm5p
+
+
+def generate_five_landmarks():
+    """
+    generate five landmarks for each image
+    """
+    import dlib
+    from skimage import io
+
+    dlib_landmark_model = './checkpoints/shape_predictor_68_face_landmarks.dat'
+    predictor = dlib.shape_predictor(dlib_landmark_model)
+    detector = dlib.get_frontal_face_detector()
+
+    img_path = "/home/zhanghm/Research/VideoMAE/VideoMAE/data/HDTF_preprocessed/RD_Radio1_000/face_image/remove/000000.jpg"
+    img = io.imread(img_path)
+    dets = detector(img, 0)
+
+    if list(dets) == []:
+        print("No face detected")
+    pts = predictor(img, dets[0]).parts()
+    pts = np.array([[pt.x, pt.y] for pt in pts]) # (68, 2) facial landmarks
+
+    five_lms = extract_5p(pts) # (5, 2) five landmarks
+
+    ## save the results
+    np.savetxt("temp.txt", five_lms, fmt="%.2f", delimiter=' ')
+
+
 if __name__ == '__main__':
+    # generate_five_landmarks()
     print('Datasets:',opt.img_folder)
     data_prepare([os.path.join(opt.data_root,folder) for folder in opt.img_folder],opt.mode)

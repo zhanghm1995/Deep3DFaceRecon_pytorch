@@ -2,7 +2,11 @@ import os
 import cv2
 import numpy as np
 from scipy.io import loadmat
-import tensorflow as tf
+try:
+    import tensorflow.compat.v1 as tf
+    tf.disable_v2_behavior()
+except:
+    import tensorflow as tf
 from util.preprocess import align_for_lm
 from shutil import move
 
@@ -51,7 +55,7 @@ def load_lm_graph(graph_filename):
 
 # landmark detection
 def detect_68p(img_path,sess,input_op,output_op):
-    print('detecting landmarks......')
+    print(f'detecting landmarks in {img_path}......')
     names = [i for i in sorted(os.listdir(
         img_path)) if 'jpg' in i or 'png' in i or 'jpeg' in i or 'PNG' in i]
     vis_path = os.path.join(img_path, 'vis')

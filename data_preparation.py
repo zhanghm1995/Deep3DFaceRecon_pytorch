@@ -108,7 +108,7 @@ if __name__ == '__main__':
     splited_list = get_splited_filelists(folder_list, 40)
     print(f"There are {len(splited_list)} splited list wait to process")
 
-    index = 0
+    index = 2
 
     filelist = splited_list[index]
     print(len(filelist), filelist[:3], f"index is {index}")

@@ -149,10 +149,9 @@ def resize_n_crop_img(img, lm, t, s, target_size=224., mask=None):
         mask = mask.resize((w, h), resample=Image.BICUBIC)
         mask = mask.crop((left, up, right, below))
 
-    lm = np.stack([lm[:, 0] - t[0] + w0/2, lm[:, 1] -
-                  t[1] + h0/2], axis=1)*s
-    lm = lm - np.reshape(
-            np.array([(w/2 - target_size/2), (h/2-target_size/2)]), [1, 2])
+    lm = np.stack([lm[:, 0] - t[0] + w0/2, 
+                   lm[:, 1] - t[1] + h0/2], axis=1) * s
+    lm = lm - np.reshape(np.array([(w/2 - target_size/2), (h/2 - target_size/2)]), [1, 2])
 
     return img, lm, mask
 

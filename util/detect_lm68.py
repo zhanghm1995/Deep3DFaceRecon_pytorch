@@ -54,7 +54,7 @@ def load_lm_graph(graph_filename):
     return lm_sess,img_224,output_lm
 
 # landmark detection
-def detect_68p(img_path,sess,input_op,output_op):
+def detect_68p(img_path,sess,input_op,output_op, five_landmark_dir="detections"):
     print(f'detecting landmarks in {img_path}......')
     names = [i for i in sorted(os.listdir(
         img_path)) if 'jpg' in i or 'png' in i or 'jpeg' in i or 'PNG' in i]
@@ -73,7 +73,7 @@ def detect_68p(img_path,sess,input_op,output_op):
         print('%05d' % (i), ' ', name)
         full_image_name = os.path.join(img_path, name)
         txt_name = '.'.join(name.split('.')[:-1]) + '.txt'
-        full_txt_name = os.path.join(img_path, 'detections', txt_name) # 5 facial landmark path for each image
+        full_txt_name = os.path.join(img_path, five_landmark_dir, txt_name) # 5 facial landmark path for each image
 
         # if an image does not have detected 5 facial landmarks, remove it from the training list
         if not os.path.isfile(full_txt_name):

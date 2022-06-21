@@ -5,6 +5,8 @@ import math
 import numpy as np
 import os
 import cv2
+from tqdm import tqdm
+
 
 class GMM:
     def __init__(self, dim, num, w, mu, cov, cov_det, cov_inv):
@@ -116,10 +118,10 @@ def get_skin_mask(img_path):
     if not os.path.isdir(save_path):
         os.makedirs(save_path)
     
-    for i in range(0, len(names)):
+    for i in tqdm(range(0, len(names))):
         name = names[i]
-        print('%05d' % (i), ' ', name)
         full_image_name = os.path.join(img_path, name)
         img = cv2.imread(full_image_name).astype(np.float32)
         skin_img = skinmask(img)
+        
         cv2.imwrite(os.path.join(save_path, name), skin_img.astype(np.uint8))

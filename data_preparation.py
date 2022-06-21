@@ -23,7 +23,7 @@ def data_prepare(folder_list,mode):
     lm_sess,input_op,output_op = load_lm_graph('./checkpoints/lm_model/68lm_detector.pb') # load a tensorflow version 68-landmark detector
 
     for img_folder in folder_list:
-        detect_68p(img_folder,lm_sess,input_op,output_op) # detect landmarks for images
+        detect_68p(img_folder,lm_sess,input_op,output_op, five_landmark_dir="") # detect landmarks for images
         get_skin_mask(img_folder) # generate skin attention mask for images
 
     # create files that record path to all training data
@@ -78,4 +78,4 @@ def generate_five_landmarks():
 if __name__ == '__main__':
     # generate_five_landmarks()
     print('Datasets:',opt.img_folder)
-    data_prepare([os.path.join(opt.data_root,folder) for folder in opt.img_folder],opt.mode)
+    data_prepare([os.path.join(opt.data_root,folder, "face_image") for folder in opt.img_folder],opt.mode)

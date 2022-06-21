@@ -9,6 +9,7 @@ except:
     import tensorflow as tf
 from util.preprocess import align_for_lm
 from shutil import move
+from tqdm import tqdm
 
 mean_face = np.loadtxt('util/test_mean_face.txt')
 mean_face = mean_face.reshape([68, 2])
@@ -68,9 +69,8 @@ def detect_68p(img_path,sess,input_op,output_op, five_landmark_dir="detections")
     if not os.path.isdir(save_path):
         os.makedirs(save_path)
 
-    for i in range(0, len(names)):
+    for i in tqdm(range(0, len(names))):
         name = names[i]
-        print('%05d' % (i), ' ', name)
         full_image_name = os.path.join(img_path, name)
         txt_name = '.'.join(name.split('.')[:-1]) + '.txt'
         full_txt_name = os.path.join(img_path, five_landmark_dir, txt_name) # 5 facial landmark path for each image

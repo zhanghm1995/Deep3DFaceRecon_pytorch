@@ -2,6 +2,7 @@
 """
 
 import os 
+import os.path as osp
 import numpy as np
 import argparse
 from util.detect_lm68 import detect_68p,load_lm_graph
@@ -12,13 +13,13 @@ warnings.filterwarnings("ignore")
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--data_root', type=str, default='datasets', help='root directory for training data')
-parser.add_argument('--img_folder', nargs="+", required=True, help='folders of training images')
+parser.add_argument('--img_folder', nargs="+", help='folders of training images')
 parser.add_argument('--mode', type=str, default='train', help='train or val')
 opt = parser.parse_args()
 
 os.environ['CUDA_VISIBLE_DEVICES'] = '0'
 
-def data_prepare(folder_list,mode):
+def data_prepare(folder_list, mode, index=None):
 
     lm_sess,input_op,output_op = load_lm_graph('./checkpoints/lm_model/68lm_detector.pb') # load a tensorflow version 68-landmark detector
 
@@ -38,7 +39,9 @@ def data_prepare(folder_list,mode):
     lms_list = ['.'.join(i.split('.')[:-1]) + '.txt' for i in lms_list]
     
     lms_list_final, imgs_list_final, msks_list_final = check_list(lms_list, imgs_list, msks_list) # check if the path is valid
-    write_list(lms_list_final, imgs_list_final, msks_list_final, mode=mode) # save files
+    write_list(lms_list_final, imgs_list_final, 
+               msks_list_final, mode=mode, 
+               save_name="" if index is None else str(index)) # save files
 
 
 def extract_5p(lm):
@@ -75,7 +78,39 @@ def generate_five_landmarks():
     np.savetxt("temp.txt", five_lms, fmt="%.2f", delimiter=' ')
 
 
+def get_folder_list(root_dir, file_list=None):
+    if file_list is None:
+        folder_list = [osp.join(entry.path, "face_image") for entry in os.scandir(root_dir) if entry.is_dir()]
+        folder_list = sorted(folder_list)
+    else:
+        lines_list = open(file_list).read().splitlines()
+
+        folder_list = [osp.join(root_dir, dir, "face_image") for dir in lines_list]
+        folder_list = sorted(folder_list)
+
+    return folder_list
+
+def get_splited_filelists(filelists: list, split_length):
+    data_splited = [filelists[i:i + split_length] for i in range(0, len(filelists), split_length)]
+    return data_splited
+
+
 if __name__ == '__main__':
     # generate_five_landmarks()
-    print('Datasets:',opt.img_folder)
-    data_prepare([os.path.join(opt.data_root,folder, "face_image") for folder in opt.img_folder],opt.mode)
+    # print('Datasets:',opt.img_folder)
+    # data_prepare([os.path.join(opt.data_root,folder, "face_image") for folder in opt.img_folder],opt.mode)
+
+    ## Process in batch
+    root_dir = "datasets/HDTF_preprocessed"
+    folder_list = get_folder_list(root_dir, file_list="datasets/all.txt")
+    print(f"There are {len(folder_list)} folders")
+
+    splited_list = get_splited_filelists(folder_list, 40)
+    print(f"There are {len(splited_list)} splited list wait to process")
+
+    index = 0
+
+    filelist = splited_list[index]
+    print(len(filelist), filelist[:3], f"index is {index}")
+
+    data_prepare(filelist, opt.mode, index=index)

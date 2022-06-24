@@ -19,23 +19,24 @@ opt = parser.parse_args()
 
 os.environ['CUDA_VISIBLE_DEVICES'] = '0'
 
-def data_prepare(folder_list, mode, index=None):
+def data_prepare(folder_list, mode, apply_skin_mask=True, index=None):
 
     lm_sess,input_op,output_op = load_lm_graph('./checkpoints/lm_model/68lm_detector.pb') # load a tensorflow version 68-landmark detector
 
     for img_folder in folder_list:
         detect_68p(img_folder,lm_sess,input_op,output_op, five_landmark_dir="") # detect landmarks for images
-        get_skin_mask(img_folder) # generate skin attention mask for images
+        if apply_skin_mask:
+            get_skin_mask(img_folder) # generate skin attention mask for images
 
     # create files that record path to all training data
     msks_list = []
     for img_folder in folder_list:
-        path = os.path.join(img_folder, 'mask')
+        path = os.path.join(img_folder, 'mask_refine')
         msks_list += ['/'.join([img_folder, 'mask', i]) for i in sorted(os.listdir(path)) if 'jpg' in i or 
                                                     'png' in i or 'jpeg' in i or 'PNG' in i]
 
-    imgs_list = [i.replace('mask/', '') for i in msks_list]
-    lms_list = [i.replace('mask', 'landmarks') for i in msks_list]
+    imgs_list = [i.replace('mask_refine/', '') for i in msks_list]
+    lms_list = [i.replace('mask_refine', 'landmarks') for i in msks_list]
     lms_list = ['.'.join(i.split('.')[:-1]) + '.txt' for i in lms_list]
     
     lms_list_final, imgs_list_final, msks_list_final = check_list(lms_list, imgs_list, msks_list) # check if the path is valid
@@ -108,9 +109,17 @@ if __name__ == '__main__':
     splited_list = get_splited_filelists(folder_list, 40)
     print(f"There are {len(splited_list)} splited list wait to process")
 
-    index = 2
+    index = 10
 
     filelist = splited_list[index]
     print(len(filelist), filelist[:3], f"index is {index}")
 
-    data_prepare(filelist, opt.mode, index=index)
+    # bad_list = []
+    # for dir in folder_list:
+    #     landmarks_dir = osp.join(dir, "landmarks")
+    #     if not osp.isdir(landmarks_dir):
+    #         bad_list.append(dir)
+    # print(len(bad_list))
+    # print(bad_list)
+    # filelist = bad_list
+    data_prepare(filelist, opt.mode, apply_skin_mask=False, index=index)

@@ -222,6 +222,7 @@ class MyVisualizer:
         for k, v in losses.items():
             message += '%s: %.3f ' % (k, v)
 
-        print(message)  # print the message
+        # print(message)  # print the message
         with open(self.log_name, "a") as log_file:
             log_file.write('%s\n' % message)  # save the message
+        return message

@@ -5,6 +5,7 @@ import os
 import time
 import numpy as np
 import torch
+from tqdm import tqdm
 from options.train_options import TrainOptions
 from data import create_dataset
 from models import create_model
@@ -45,7 +46,7 @@ def main(rank, world_size, train_opt):
 
     if rank == 0:
         print('The batch number of training images = %d\n, \
-            the batch number of validation images = %d'% (train_dataset_batches, val_dataset_batches))
+               the batch number of validation images = %d'% (train_dataset_batches, val_dataset_batches))
         model.print_networks(train_opt.verbose)
         visualizer = MyVisualizer(train_opt)   # create a visualizer that display/save images and plots
 
@@ -65,7 +66,9 @@ def main(rank, world_size, train_opt):
         epoch_iter = 0                  # the number of training iterations in current epoch, reset to 0 every epoch
 
         train_dataset.set_epoch(epoch)
-        for i, train_data in enumerate(train_dataset):  # inner loop within one epoch
+
+        dataset_prog_bar = tqdm(train_dataset)
+        for train_data in dataset_prog_bar:  # inner loop within one epoch
             iter_start_time = time.time()  # timer for computation per iteration
             if total_iters % train_opt.print_freq == 0:
                 t_data = iter_start_time - iter_data_time
@@ -93,7 +96,8 @@ def main(rank, world_size, train_opt):
             
             if rank == 0 and (total_iters == batch_size or total_iters % train_opt.print_freq == 0):    # print training losses and save logging information to the disk
                 losses = model.get_current_losses()
-                visualizer.print_current_losses(epoch, epoch_iter, losses, optimize_time, t_data)
+                message = visualizer.print_current_losses(epoch, epoch_iter, losses, optimize_time, t_data)
+                dataset_prog_bar.set_description(message)
                 visualizer.plot_current_losses(total_iters, losses)
 
             if total_iters == batch_size or total_iters % train_opt.evaluation_freq == 0:

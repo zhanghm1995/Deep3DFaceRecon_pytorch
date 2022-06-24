@@ -26,10 +26,13 @@ def read_data(im_path, lm_path, lm3d_std, to_tensor=True):
     # to RGB 
     im = Image.open(im_path).convert('RGB')
     W,H = im.size
-    lm = np.loadtxt(lm_path).astype(np.float32)
+    lm = np.loadtxt(lm_path).astype(np.float32) # (5, 2)
     lm = lm.reshape([-1, 2])
+
     lm[:, -1] = H - 1 - lm[:, -1]
+    
     _, im, lm, _ = align_img(im, lm, lm3d_std)
+
     if to_tensor:
         im = torch.tensor(np.array(im)/255., dtype=torch.float32).permute(2, 0, 1).unsqueeze(0)
         lm = torch.tensor(lm).unsqueeze(0)

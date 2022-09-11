@@ -25,11 +25,10 @@ from util.load_mats import load_lm3d
 import torch 
 from data.flist_dataset import default_flist_reader
 from scipy.io import loadmat, savemat
-from util.file_utils import read_data
+from util.file_utils import read_data, fetch_subsplit_filelists
 
 
 def get_data_path(root='examples'):
-    
     im_path = [os.path.join(root, i) for i in sorted(os.listdir(root)) if i.endswith('png') or i.endswith('jpg')]
     lm_path = [i.replace('png', 'txt').replace('jpg', 'txt') for i in im_path]
     # lm_path = [os.path.join(i.replace(i.split(os.path.sep)[-1],''),'detections',i.split(os.path.sep)[-1]) for i in lm_path]
@@ -94,6 +93,12 @@ def main(rank, opt, name='examples'):
 
 
 if __name__ == '__main__':
+    dataset_root = "/data/zhanghm/VoxCeleb1_FOMM/vox1_preprocessed/train"
+    file_list = fetch_subsplit_filelists(dataset_root, split_length=100, 
+                                         subfolder_name="face_image")
+    print(len(file_list))
+    exit(0)
+
     opt = TestOptions().parse()  # get test options
     main(0, opt, opt.img_folder)
     

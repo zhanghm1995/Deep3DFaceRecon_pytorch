@@ -102,14 +102,14 @@ if __name__ == '__main__':
     # data_prepare([os.path.join(opt.data_root,folder, "face_image") for folder in opt.img_folder],opt.mode)
 
     ## Process in batch
-    root_dir = "datasets/HDTF_preprocessed"
-    folder_list = get_folder_list(root_dir, file_list="datasets/all.txt")
+    root_dir = "./HDTF_face3dmmformer/val"
+    folder_list = get_folder_list(root_dir, file_list="./HDTF_face3dmmformer/val/val.txt")
     print(f"There are {len(folder_list)} folders")
 
-    splited_list = get_splited_filelists(folder_list, 40)
+    splited_list = get_splited_filelists(folder_list, 8)
     print(f"There are {len(splited_list)} splited list wait to process")
 
-    index = 10
+    index = 0
 
     filelist = splited_list[index]
     print(len(filelist), filelist[:3], f"index is {index}")

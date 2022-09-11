@@ -13,6 +13,7 @@ Description: My customized test script
 
 import os
 import os.path as osp
+from tqdm import tqdm
 from options.test_options import TestOptions
 from data import create_dataset
 from models import create_model
@@ -24,6 +25,8 @@ from util.load_mats import load_lm3d
 import torch 
 from data.flist_dataset import default_flist_reader
 from scipy.io import loadmat, savemat
+from util.file_utils import read_data
+
 
 def get_data_path(root='examples'):
     
@@ -34,20 +37,6 @@ def get_data_path(root='examples'):
 
     return im_path, lm_path
 
-def read_data(im_path, lm_path, lm3d_std, to_tensor=True):
-    # to RGB 
-    im = Image.open(im_path).convert('RGB')
-    W,H = im.size
-    lm = np.loadtxt(lm_path).astype(np.float32)
-    lm = lm.reshape([-1, 2])
-    lm[:, -1] = H - 1 - lm[:, -1]
-    
-    transform_params, im, lm, _ = align_img(im, lm, lm3d_std)
-    if to_tensor:
-        im = torch.tensor(np.array(im)/255., dtype=torch.float32).permute(2, 0, 1).unsqueeze(0)
-        lm = torch.tensor(lm).unsqueeze(0)
-    
-    return im, lm, transform_params
 
 def main(rank, opt, name='examples'):
     device = torch.device(rank)
@@ -65,29 +54,46 @@ def main(rank, opt, name='examples'):
     save_dir = osp.join(osp.dirname(name), "deep3dface")
     os.makedirs(save_dir, exist_ok=True)
 
-    for i in range(len(im_path)):
-        print(i, im_path[i])
+    prog_bar = tqdm(range(len(im_path)), total=len(im_path))
+    for i in prog_bar:
         img_name = im_path[i].split(os.path.sep)[-1].replace('.png','').replace('.jpg','')
         if not os.path.isfile(lm_path[i]):
             continue
+        
+        prog_bar.set_description(f"{i} {im_path[i]}")
+
         im_tensor, lm_tensor, transform_params = read_data(im_path[i], lm_path[i], lm3d_std)
         data = {
             'imgs': im_tensor,
             'lms': lm_tensor,
-            'transform_params': transform_params
+            'trans_params': transform_params
         }
+        
+        ## Forward
         model.set_input(data)  # unpack data from data loader
         model.test()           # run inference
         # visuals = model.get_current_visuals()  # get image results
         # visualizer.display_current_results(visuals, 0, opt.epoch, dataset=name.split(os.path.sep)[-1], 
         #     save_results=True, count=i, name=img_name, add_image=False)
 
-        # model.save_mesh(os.path.join(visualizer.img_dir, name.split(os.path.sep)[-1], 'epoch_%s_%06d'%(opt.epoch, 0),img_name+'.obj')) # save reconstruction meshes
-        # model.save_coeff(os.path.join(visualizer.img_dir, name.split(os.path.sep)[-1], 'epoch_%s_%06d'%(opt.epoch, 0),img_name+'.mat')) # save predicted coefficients
+        pred_coeff = {key:model.pred_coeffs_dict[key].cpu().numpy() for key in model.pred_coeffs_dict}
+        pred_coeff = np.concatenate([
+                pred_coeff['id'], 
+                pred_coeff['exp'], 
+                pred_coeff['tex'], 
+                pred_coeff['angle'],
+                pred_coeff['gamma'],
+                pred_coeff['trans']], 1)
+        
+        trans_params = transform_params[None]
+        save_path = osp.join(save_dir, f"{img_name}.mat")
+        savemat(save_path,
+                {'coeff':pred_coeff, 'transform_params':trans_params})
+        
+        # model.save_coeff(os.path.join(save_dir, img_name + '.mat'))
 
-        model.save_coeff(os.path.join(save_dir, img_name + '.mat'))
 
 if __name__ == '__main__':
     opt = TestOptions().parse()  # get test options
-    main(0, opt,opt.img_folder)
+    main(0, opt, opt.img_folder)
     

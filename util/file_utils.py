@@ -37,7 +37,8 @@ def read_data(im_path, lm_path, lm3d_std, to_tensor=True):
 def get_folder_list(root_dir, 
                     folders_name_file=None, 
                     subfolder_name="",
-                    suffix=None):
+                    suffix=None,
+                    **kwargs):
     if folders_name_file is not None:
         folder_lines = open(folders_name_file).read().splitlines()
         folder_list = [osp.join(root_dir, folder_name, subfolder_name) \
@@ -54,7 +55,8 @@ def get_folder_list(root_dir,
 
 def get_splited_filelists(filelists: list, 
                           split_length=100, 
-                          disable_split=False):
+                          disable_split=False,
+                          **kwargs):
     if disable_split: # return the original list
         return [filelists]
     

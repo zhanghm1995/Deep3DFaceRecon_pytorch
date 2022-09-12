@@ -37,20 +37,17 @@ def get_data_path(root='examples'):
     return im_path, lm_path
 
 
-def main(rank, opt, name='examples'):
-    device = torch.device(rank)
-    torch.cuda.set_device(device)
-    model = create_model(opt)
-    model.setup(opt)
-    model.device = device
-    model.parallelize()
-    model.eval()
+def main(model, opt, name='examples'):
     visualizer = MyVisualizer(opt)
 
     im_path, lm_path = get_data_path(name)
     lm3d_std = load_lm3d(opt.bfm_folder) 
 
     save_dir = osp.join(osp.dirname(name), "deep3dface")
+    if osp.exists(save_dir):
+        print(f"Warning: {save_dir} already exists, will skip!")
+        return
+    
     os.makedirs(save_dir, exist_ok=True)
 
     prog_bar = tqdm(range(len(im_path)), total=len(im_path))
@@ -86,19 +83,38 @@ def main(rank, opt, name='examples'):
         
         trans_params = transform_params[None]
         save_path = osp.join(save_dir, f"{img_name}.mat")
-        savemat(save_path,
-                {'coeff':pred_coeff, 'transform_params':trans_params})
+        savemat(save_path, {'coeff':pred_coeff, 'transform_params':trans_params})
         
         # model.save_coeff(os.path.join(save_dir, img_name + '.mat'))
 
 
+def get_model(opt, rank=0):
+    device = torch.device(rank)
+    torch.cuda.set_device(device)
+    model = create_model(opt)
+    model.setup(opt)
+    model.device = device
+    model.parallelize()
+    model.eval()
+    return model
+
+
 if __name__ == '__main__':
-    dataset_root = "/data/zhanghm/VoxCeleb1_FOMM/vox1_preprocessed/train"
-    file_list = fetch_subsplit_filelists(dataset_root, split_length=100, 
+    dataset_root = "/data/zhanghm/VoxCeleb1_FOMM/vox1_preprocessed/test"
+    file_list = fetch_subsplit_filelists(dataset_root, split_length=500, 
                                          subfolder_name="face_image")
     print(len(file_list))
-    exit(0)
+    
+    index = 1
+    choosed_file_list = file_list[index]
+    print(len(choosed_file_list), choosed_file_list[:3], f"Current index: {index}")
 
     opt = TestOptions().parse()  # get test options
-    main(0, opt, opt.img_folder)
+    
+    model = get_model(opt, rank=0)
+    for folder in tqdm(choosed_file_list):
+        main(model, opt, folder)
+
+    # opt = TestOptions().parse()  # get test options
+    # main(0, opt, opt.img_folder)
     

@@ -222,7 +222,7 @@ class FaceReconModel(BaseModel):
         pred_lm = self.pred_lm.cpu().numpy()
         pred_lm = np.stack([pred_lm[:,:,0],self.input_img.shape[2]-1-pred_lm[:,:,1]],axis=2) # transfer to image coordinate
         pred_coeffs['lm68'] = pred_lm
-        # pred_coeffs['transform_params'] = self.transform_params
+        pred_coeffs['transform_params'] = self.transform_params
         savemat(name,pred_coeffs)
 
 
